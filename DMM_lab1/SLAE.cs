@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,9 +21,11 @@ namespace DMM_lab1
     {
         public int N { get; set; }
         public int M { get; set; }  
+        public int K { get; set; }
         public int[,] A { get; set; }
         public int[] C { get; set; }
         public int[,] B { get; set; }
+        public int[,] ResultB { get; set; }
         private List<Element> firstStr;
         public SLAE(string inputPath)
         {
@@ -58,6 +61,7 @@ namespace DMM_lab1
 
             // Fill B matrix
             B = new int[N + M, M + 1];
+            ResultB = new int[N + M, M + 1];
             for (int i = 0; i < N; i++)
             {
                 for (int j = 0; j < M; j++)
@@ -159,25 +163,46 @@ namespace DMM_lab1
             var gcd = GetGcdBySteinMultipleValues(rowNumber);
             return (B[rowNumber, M] % gcd == 0);
         }
-        public void ConvertToGeneralSolution()
+        public bool ConvertToGeneralSolution()
         {
             Element ai, aj = new Element(-1, 0);
             int q, r;
             int iter = 0;
             int rowNumber = 0;
-            bool flag;
+            bool flag;            
 
-            PrintB(iter);
+            //PrintB(iter);
 
             flag = FindNotNullElems(rowNumber);
 
+            for (int i = 0; i < N + M; i++)
+            {
+                for (int j = 0; j < M + 1; j++)
+                {
+                    ResultB[i, j] = B[i, j];
+                }
+            }
+
             while (flag)
-            {                
+            {
+                for (int i = 0; i < N + M; i++)
+                {
+                    for (int j = 0; j < M + 1; j++)
+                    {
+                        ResultB[i, j] = B[i, j];
+                    }
+                }
+                
                 // Step 1
                 ai = firstStr[0];
 
+                if (firstStr.Count <= 1)
+                {
+                    break;
+                }
+
                 // Step 2
-                for (int j = rowNumber; j <= M + 1; j++)
+                for (int j = rowNumber; j < M + 1; j++)
                 {
                     if (j != ai.Index && B[rowNumber, j] != 0)
                     {
@@ -195,30 +220,33 @@ namespace DMM_lab1
                 {
                     B[i, aj.Index] -= B[i, ai.Index] * q;
                 }
-                iter++;                
-
+                iter++;
                 if (rowNumber < N)
                 {
+                    //Console.WriteLine($"rowNumber = {rowNumber}");
+
                     if (!FindNotNullElems(rowNumber) && firstStr[0].Index != M + 1)
                     {
                         if (!CheckGcd(rowNumber))
                         {
-                            PrintB(iter);
+                            //PrintB(iter);
                             Console.WriteLine("NO SOLUTIONS");
-                            break;
-                        }
+                            return false;
+                        }                        
 
                         ReplaceColumns(firstStr[0].Index, 0);
-                        rowNumber++;                        
+                        rowNumber++;
+
                     }
                     FindNotNullElems(rowNumber);
                     if (!CheckGcd(rowNumber))
                     {
-                        PrintB(iter);
+                        //PrintB(iter);
                         Console.WriteLine("NO SOLUTIONS");
-                        break;
+                        return false;
+
                     }
-                    PrintB(iter);
+                    //PrintB(iter);
 
                 }
                 else
@@ -226,6 +254,82 @@ namespace DMM_lab1
                     flag = false;
                 }               
             }
+
+            // Check last column
+            if (N > 1)
+            {
+                for (int i = 0; i < N; i++)
+                {
+                    if (ResultB[i, M] != 0)
+                    {
+                        Console.WriteLine("NO SOLUTIONS");
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+        public void ConvertToTrapezoidalForm()
+        {
+            int index = 0;
+
+            for (int i = 0; i < N + M; i++)
+            {
+                for (int j = 0; j < M + 1; j++)
+                {
+                    B[i, j] = ResultB[i, j];
+                }
+            }
+
+            for (int i = 0; i < N; i++)
+            {
+                FindNotNullElems(i);
+
+                index = i;
+
+                for (int j = 0; j < firstStr.Count; j++)
+                {                    
+                    if (firstStr[j].Index > i)
+                    {
+                        ReplaceColumns(index, firstStr[j].Index);
+                        index++;
+                        //PrintB(K);
+                    }
+                }
+            }
+        }
+        public void PrintFreeVariables(StreamWriter sw)
+        {
+            ConvertToTrapezoidalForm();
+
+            K = 0;
+
+            while (B[K, K] != 0 && K < N) K++;
+
+            sw.WriteLine($"{M - K}");
+
+            for (int i = N; i < N + M; i++)
+            {
+                for (int j = K; j < M + 1; j++)
+                {
+                    sw.Write($"{B[i, j]}\t");
+                }
+                sw.Write("\n");
+            }
+
+            Console.WriteLine($"K = {M - K}");
+
+            for (int i = N; i < N + M; i++)
+            {
+
+                for (int j = K; j < M + 1; j++)
+                {
+                    Console.Write($"{B[i, j]}\t");
+                }
+                Console.Write("\n");
+            }
+
         }
     }
 }
