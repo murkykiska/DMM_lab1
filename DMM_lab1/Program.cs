@@ -9,10 +9,7 @@ namespace DMM_lab1
         {
             var d = new DirectoryInfo(path + "Tests\\");
 
-            //SLAE s = new SLAE(path + "test2.txt");
-            //bool hasSolution = s.ConvertToGeneralSolution();
-            //if (hasSolution) s.PrintFreeVariables((path + "test1.txt").Replace(".txt", "_result.txt"));
-
+            //SLAE s = new SLAE(path + "Tests\\metoda_4.txt");
 
             foreach (var file in d.GetFiles())
             {
@@ -25,7 +22,11 @@ namespace DMM_lab1
                     if (hasSolution)
                         s.PrintFreeVariables(sw);
                     else
+                    {
                         sw.WriteLine("NO SOLUTIONS");
+                        Console.WriteLine("NO SOLUTIONS");
+
+                    }
                 }
             }
         }

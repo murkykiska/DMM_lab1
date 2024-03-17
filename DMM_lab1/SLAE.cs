@@ -158,151 +158,153 @@ namespace DMM_lab1
 
             return firstStr.Count > rowNumber + 1;
         }
+        private Element? FindNotNullElem(int rowNumber)
+        {
+            firstStr = new List<Element>();
+
+            for (int j = rowNumber; j < M; j++)
+            {
+                if (B[rowNumber, j] != 0)
+                {
+                    firstStr.Add(new Element(j, B[rowNumber, j]));
+                }
+            }
+
+            firstStr.Sort(delegate (Element a, Element b)
+            {
+                if (a == null && b == null) return 0;
+                else if (a == null) return -1;
+                else if (b == null) return 1;
+                else
+                    return Math.Abs(a.Value).CompareTo(Math.Abs(b.Value));
+            });
+
+            return firstStr.FirstOrDefault();
+        }
         private bool CheckGcd(int rowNumber)
         {
             var gcd = GetGcdBySteinMultipleValues(rowNumber);
             return (B[rowNumber, M] % gcd == 0);
         }
-        public bool ConvertToGeneralSolution()
+        public bool ConvertOneRow(int rowNumber)
         {
             Element ai, aj = new Element(-1, 0);
             int q, r;
             int iter = 0;
-            int rowNumber = 0;
-            bool flag;            
-
+            bool flag = true;
             //PrintB(iter);
 
-            flag = FindNotNullElems(rowNumber);
+            int count = 0;
 
-            for (int i = 0; i < N + M; i++)
+            ai = FindNotNullElem(rowNumber);            
+
+            while (count != 1)
             {
-                for (int j = 0; j < M + 1; j++)
+                for (int i = rowNumber; i < M; i++)
                 {
-                    ResultB[i, j] = B[i, j];
-                }
-            }
-
-            while (flag)
-            {
-                for (int i = 0; i < N + M; i++)
-                {
-                    for (int j = 0; j < M + 1; j++)
+                    if (B[rowNumber, i] != 0)
                     {
-                        ResultB[i, j] = B[i, j];
-                    }
-                }
-                
-                // Step 1
-                ai = firstStr[0];
-
-                if (firstStr.Count <= 1)
-                {
-                    break;
-                }
-
-                // Step 2
-                for (int j = rowNumber; j < M + 1; j++)
-                {
-                    if (j != ai.Index && B[rowNumber, j] != 0)
-                    {
-                        aj = new Element(j, B[rowNumber, j]);
+                        flag = true;
                         break;
                     }
                 }
-
-                // Step 3
-                q = aj.Value / ai.Value;
-                r = aj.Value % ai.Value;
-
-                // Step 4
-                for (int i = 0; i < N + M; i++)
+                if (!flag)
                 {
-                    B[i, aj.Index] -= B[i, ai.Index] * q;
+                    return false;
                 }
-                iter++;
-                if (rowNumber < N)
-                {
-                    //Console.WriteLine($"rowNumber = {rowNumber}");
 
-                    if (!FindNotNullElems(rowNumber) && firstStr[0].Index != M + 1)
+                count = 1;
+
+                for(int i = rowNumber; i < M; i++)
+                {
+                    // Step 1
+                    ai = FindNotNullElem(rowNumber);
+
+                    if (ai == null) break;
+
+                    if (B[rowNumber, i] != 0 && i != ai.Index)
                     {
-                        if (!CheckGcd(rowNumber))
+                        // Step 2
+                        for (int j = rowNumber; j < M + 1; j++)
                         {
-                            //PrintB(iter);
-                            Console.WriteLine("NO SOLUTIONS");
-                            return false;
-                        }                        
+                            if (j != ai.Index && B[rowNumber, j] != 0)
+                            {
+                                aj = new Element(j, B[rowNumber, j]);
+                                break;
+                            }
+                        }
 
-                        ReplaceColumns(firstStr[0].Index, 0);
-                        rowNumber++;
+                        // Step 3
+                        q = aj.Value / ai.Value;
+                        r = aj.Value % ai.Value;
 
-                    }
-                    FindNotNullElems(rowNumber);
-                    if (!CheckGcd(rowNumber))
-                    {
+                        // Step 4
+                        for (int j = 0; j < N + M; j++)
+                        {
+                            B[j, aj.Index] -= B[j, ai.Index] * q;
+                        }
+
+                        if (r != 0) count++;
+
+                        iter++;
                         //PrintB(iter);
-                        Console.WriteLine("NO SOLUTIONS");
-                        return false;
-
-                    }
-                    //PrintB(iter);
-
-                }
-                else
-                {
-                    flag = false;
-                }               
-            }
-
-            // Check last column
-            if (N > 1)
-            {
-                for (int i = 0; i < N; i++)
-                {
-                    if (ResultB[i, M] != 0)
-                    {
-                        Console.WriteLine("NO SOLUTIONS");
-                        return false;
                     }
                 }
+
             }
+
+            if (ai != null && ai.Index != rowNumber)
+                ReplaceColumns(ai.Index, rowNumber);
+
+            //PrintB(iter);
+
+            // Обработаем правую часть
+
+            // Если невозможно сделать элемент последнего элемента нулевым, то система не имеет решений в целых числах
+            if (B[rowNumber, rowNumber] == 0 && B[rowNumber, M] != 0)
+                return false;
+
+            if (B[rowNumber, rowNumber] == 0 && B[rowNumber, M] == 0)
+                return true;
+
+            // Если правая часть не делится без остатка на НОД оставшихся элементов, то система не имеет решений в целых числах
+            if (!CheckGcd(rowNumber))
+                return false;
+
+            //notNull = FindNotNullElemsList(rowNumber);
+
+            ai = FindNotNullElem(rowNumber);
             
-            return true;
-        }
-        public void ConvertToTrapezoidalForm()
-        {
-            int index = 0;
+            aj = new Element(M, B[rowNumber, M]);
 
+            // Step 3
+            q = aj.Value / ai.Value;
+            r = aj.Value % ai.Value;
+
+            // Step 4
             for (int i = 0; i < N + M; i++)
             {
-                for (int j = 0; j < M + 1; j++)
-                {
-                    B[i, j] = ResultB[i, j];
-                }
+                B[i, aj.Index] -= B[i, ai.Index] * q;
             }
 
+            //PrintB(iter);
+
+            return true;
+        }
+        
+        public bool ConvertToGeneralSolution()
+        {
+            var flag = true;
+            
             for (int i = 0; i < N; i++)
             {
-                FindNotNullElems(i);
-
-                index = i;
-
-                for (int j = 0; j < firstStr.Count; j++)
-                {                    
-                    if (firstStr[j].Index > i)
-                    {
-                        ReplaceColumns(index, firstStr[j].Index);
-                        index++;
-                        //PrintB(K);
-                    }
-                }
+                if (!(flag = ConvertOneRow(i))) break;                
             }
-        }
-        public void PrintFreeVariables(StreamWriter sw)
-        {
-            ConvertToTrapezoidalForm();
 
+            return flag;
+        }       
+        public void PrintFreeVariables(StreamWriter sw)
+        {            
             K = 0;
 
             while (B[K, K] != 0 && K < N) K++;
