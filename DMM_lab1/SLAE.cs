@@ -27,36 +27,33 @@ namespace DMM_lab1
         public int[,] B { get; set; }
         public int[,] ResultB { get; set; }
         private List<Element> firstStr;
-        public SLAE(string inputPath)
+        public SLAE()
         {
             // Read input params
-            using (StreamReader sr = new StreamReader(inputPath))
-            {
-                string? s;
-                string[] words;
+            string? s;
+            string[] words;
 
-                if ((s  = sr.ReadLine()) != null)
+            if ((s = Console.ReadLine()) != null)
+            {
+                words = s.Split(' ');
+                N = int.Parse(words[0]);
+                M = int.Parse(words[1]);
+            }
+
+            A = new int[N, M];
+            C = new int[N];
+
+            for (int i = 0; i < N; i++)
+            {
+                s = Console.ReadLine();
+                words = s.Split(" ");
+
+                for (int j = 0; j < M; j++)
                 {
-                    words = s.Split(' ');
-                    N = int.Parse(words[0]);
-                    M = int.Parse(words[1]);
+                    A[i, j] = int.Parse(words[j]);
                 }
 
-                A = new int[N, M];
-                C = new int[N];
-
-                for (int i = 0; i < N; i++)
-                {
-                    s = sr.ReadLine();
-                    words = s.Split(" ");
-
-                    for (int j = 0; j < M; j++)
-                    {
-                        A[i, j] = int.Parse(words[j]);
-                    }
-
-                    C[i] = int.Parse(words[M]);
-                }  
+                C[i] = int.Parse(words[M]);
             }
 
             // Fill B matrix
@@ -68,7 +65,7 @@ namespace DMM_lab1
                 {
                     B[i, j] = A[i, j];
                 }
-                B[i, M] = -C[i];
+                B[i, M] = C[i];
             }
 
             for (int i = N; i < N + M; i++) 
@@ -134,30 +131,7 @@ namespace DMM_lab1
             }
 
             return gcd;
-        }
-        private bool FindNotNullElems(int rowNumber)
-        {
-            firstStr = new List<Element>();
-
-            for (int j = 0; j < M + 1; j++)
-            {
-                if (B[rowNumber, j] != 0) 
-                {
-                    firstStr.Add(new Element(j, B[rowNumber, j]));
-                }
-            }
-
-            firstStr.Sort(delegate (Element a, Element b)
-            {
-                if (a == null && b == null) return 0;
-                else if (a == null) return -1;
-                else if (b == null) return 1;
-                else
-                    return Math.Abs(a.Value).CompareTo(Math.Abs(b.Value));
-            });
-
-            return firstStr.Count > rowNumber + 1;
-        }
+        }        
         private Element? FindNotNullElem(int rowNumber)
         {
             firstStr = new List<Element>();
@@ -303,31 +277,20 @@ namespace DMM_lab1
 
             return flag;
         }       
-        public void PrintFreeVariables(StreamWriter sw)
+        public void PrintFreeVariables()
         {            
             K = 0;
 
-            while (B[K, K] != 0 && K < N) K++;
+            while (B[K, K] != 0 && K < N) K++;            
 
-            sw.WriteLine($"{M - K}");
-
-            for (int i = N; i < N + M; i++)
-            {
-                for (int j = K; j < M + 1; j++)
-                {
-                    sw.Write($"{B[i, j]}\t");
-                }
-                sw.Write("\n");
-            }
-
-            Console.WriteLine($"K = {M - K}");
+            Console.WriteLine($"{M - K}");
 
             for (int i = N; i < N + M; i++)
             {
 
                 for (int j = K; j < M + 1; j++)
                 {
-                    Console.Write($"{B[i, j]}\t");
+                    Console.Write($"{B[i, j]} ");
                 }
                 Console.Write("\n");
             }
